@@ -19,12 +19,12 @@ public class SessionController {
 
     private static final List<SessionDTO> sessions = new CopyOnWriteArrayList<>();
 
-    @PostMapping (params = {"name", "password"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping (produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus (HttpStatus.CREATED)
     @ResponseBody
     @CrossOrigin
-    public SessionDTO createSession(@RequestParam("name") final String name, @RequestParam("password") final String password) {
-        SessionDTO newSession = SessionDTO.builder().name(name).password(password).id(getUniqueId(sessions)).build();
+    public SessionDTO createSession(final CreateDTO dto) {
+        SessionDTO newSession = SessionDTO.builder().name(dto.getName()).password(dto.getPassword()).id(getUniqueId(sessions)).build();
         log.info(">>> created session: {}", newSession);
         sessions.add(newSession);
 //        return CREATED(newPlayer);

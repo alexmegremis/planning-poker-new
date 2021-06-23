@@ -1,7 +1,6 @@
 package com.alexmegremis.planningpokerapi.api.v1;
 
-import com.alexmegremis.planningpokerapi.api.model.PlayerDTO;
-import com.alexmegremis.planningpokerapi.api.model.ResponseDTO;
+import com.alexmegremis.planningpokerapi.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,12 +29,12 @@ public class PlayerController {
         return OK(newId);
     }
 
-    @PostMapping (params = {"name"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping (produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus (HttpStatus.CREATED)
     @ResponseBody
     @CrossOrigin
-    public PlayerDTO createPlayer(@RequestParam("name") final String name) {
-        PlayerDTO newPlayer = PlayerDTO.builder().name(name).id(getUniqueId(players)).build();
+    public PlayerDTO createPlayer(final CreateDTO dto) {
+        PlayerDTO newPlayer = PlayerDTO.builder().name(dto.getName()).id(getUniqueId(players)).build();
         log.info(">>> created player: {}", newPlayer);
         players.add(newPlayer);
 //        return CREATED(newPlayer);
