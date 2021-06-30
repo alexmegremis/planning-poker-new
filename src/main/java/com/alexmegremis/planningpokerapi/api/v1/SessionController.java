@@ -1,48 +1,26 @@
 package com.alexmegremis.planningpokerapi.api.v1;
 
+import com.alexmegremis.planningpokerapi.GameService;
 import com.alexmegremis.planningpokerapi.api.model.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.stereotype.Controller;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.alexmegremis.planningpokerapi.api.model.ResponseDTO.OK;
-
-@RestController
-@RequestMapping ("/api/v1/session")
+@Controller
 @Slf4j
 public class SessionController {
 
-    private static final List<SessionDTO> sessions = new CopyOnWriteArrayList<>();
+    private final GameService gameService;
 
-    @PostMapping (produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus (HttpStatus.CREATED)
-    @ResponseBody
-    @CrossOrigin
-    public SessionDTO createSession(final CreateDTO dto) {
-        SessionDTO newSession = SessionDTO.builder().name(dto.getName()).password(dto.getPassword()).id(getUniqueId(sessions)).build();
-        log.info(">>> created session: {}", newSession);
-        sessions.add(newSession);
-//        return CREATED(newPlayer);
-        return newSession;
-    }
+    public SessionController(final GameService gameService) {this.gameService = gameService;}
 
-    public String getUniqueId(final Collection<SessionDTO> existing) {
-
-        String newId;
-
-        do {
-            newId = String.valueOf(Math.toIntExact(Math.round(Math.random() * ((9999999 - 1000000) + 1)) + 1000000));
-        } while (exists(newId, existing));
-
-        return newId;
-    }
-
-    public boolean exists(final String id, final Collection<SessionDTO> existing) {
-        return existing.stream().anyMatch(i -> i.getId().equals(id));
+    @MessageMapping ("game.newSession")
+    @SendToUser ("/queue/reply")
+    public MessageDTO<SessionDTO> createSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
+        SessionDTO result = gameService.createSession(dto, headerAccessor.getSessionId());
+        return MessageDTO.CREATED(result, MessageType.CREATED_SESSION);
     }
 }

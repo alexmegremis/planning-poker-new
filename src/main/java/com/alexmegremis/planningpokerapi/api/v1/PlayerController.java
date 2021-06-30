@@ -1,58 +1,26 @@
 package com.alexmegremis.planningpokerapi.api.v1;
 
+import com.alexmegremis.planningpokerapi.GameService;
 import com.alexmegremis.planningpokerapi.api.model.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.stereotype.Controller;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.alexmegremis.planningpokerapi.api.model.ResponseDTO.CREATED;
-import static com.alexmegremis.planningpokerapi.api.model.ResponseDTO.OK;
-
-@RestController
-@RequestMapping ("/api/v1/player")
+@Controller
 @Slf4j
 public class PlayerController {
 
-    private static final List<PlayerDTO> players = new CopyOnWriteArrayList<>();
+    private final GameService gameService;
 
-    @GetMapping (path = "newID", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus (HttpStatus.OK)
-    @ResponseBody
-    public ResponseDTO<String> getNewID() {
-        String newId = getUniqueId(players);
-        log.info(">>> new ID: {}", newId);
-        return OK(newId);
-    }
+    public PlayerController(final GameService gameService) {this.gameService = gameService;}
 
-    @PostMapping (produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus (HttpStatus.CREATED)
-    @ResponseBody
-    @CrossOrigin
-    public PlayerDTO createPlayer(final CreateDTO dto) {
-        PlayerDTO newPlayer = PlayerDTO.builder().name(dto.getName()).id(getUniqueId(players)).build();
-        log.info(">>> created player: {}", newPlayer);
-        players.add(newPlayer);
-//        return CREATED(newPlayer);
-        return newPlayer;
-    }
-
-    public String getUniqueId(final Collection<PlayerDTO> existing) {
-
-        String newId;
-
-        do {
-            newId = String.valueOf(Math.toIntExact(Math.round(Math.random() * ((9999999 - 1000000) + 1)) + 1000000));
-        } while (exists(newId, existing));
-
-        return newId;
-    }
-
-    public boolean exists(final String id, final Collection<PlayerDTO> existing) {
-        return existing.stream().anyMatch(i -> i.getId().equals(id));
+    @MessageMapping ("game.newPlayer")
+    @SendToUser ("/queue/reply")
+    public MessageDTO<PlayerDTO> createPlayer(@Payload final PlayerDTO dto, SimpMessageHeaderAccessor headerAccessor) {
+        PlayerDTO result = gameService.createPlayer(dto, headerAccessor.getSessionId());
+        return MessageDTO.CREATED(result, MessageType.CREATED_PLAYER);
     }
 }

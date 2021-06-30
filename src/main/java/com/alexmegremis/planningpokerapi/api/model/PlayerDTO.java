@@ -7,7 +7,9 @@ import java.util.Calendar;
 
 @Data
 @ToString
-public class PlayerDTO {
+@EqualsAndHashCode
+public class PlayerDTO implements UniqueIdentifiable {
+
     private String id;
     private String name;
 
@@ -18,7 +20,12 @@ public class PlayerDTO {
     }
 
     @JsonIgnore
-    private final Long created     = Calendar.getInstance().getTimeInMillis();
+    @EqualsAndHashCode.Exclude
+    private final Long   created     = Calendar.getInstance().getTimeInMillis();
     @JsonIgnore
-    private       Long lastContact = Calendar.getInstance().getTimeInMillis();
+    @EqualsAndHashCode.Exclude
+    private       Long   lastContact = Calendar.getInstance().getTimeInMillis();
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private       String sessionID;
 }
