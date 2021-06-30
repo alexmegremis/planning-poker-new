@@ -7,20 +7,23 @@ import java.util.Calendar;
 
 @Data
 @ToString
-public class SessionDTO {
+public class SessionDTO implements UniqueIdentifiable {
+
     private String id;
     private String name;
     private String password;
+    private PlayerDTO owner;
 
     @Builder
-    public SessionDTO(final String id, final String name, final String password) {
+    public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner) {
         this.id = id;
         this.name = name;
         this.password = password;
+        this.owner = owner;
     }
 
     @JsonIgnore
-    private final Long created     = Calendar.getInstance().getTimeInMillis();
+    private final Calendar created     = Calendar.getInstance();
     @JsonIgnore
-    private       Long lastContact = Calendar.getInstance().getTimeInMillis();
+    private       Calendar lastContact = Calendar.getInstance();
 }
