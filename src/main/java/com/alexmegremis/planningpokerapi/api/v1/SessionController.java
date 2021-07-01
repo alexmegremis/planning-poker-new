@@ -27,7 +27,7 @@ public class SessionController {
     @MessageMapping ("game.joinSession")
     @SendToUser ("/queue/reply")
     public MessageDTO<SessionDTO> joinSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
-        SessionDTO result = gameService.joinSession(dto, headerAccessor.getSessionId());
-        return MessageDTO.OK(result, MessageType.CREATED_SESSION);
+        MessageType result = gameService.joinSession(dto, headerAccessor.getSessionId());
+        return MessageDTO.<SessionDTO>builder().messageType(result).payload(dto).build();
     }
 }

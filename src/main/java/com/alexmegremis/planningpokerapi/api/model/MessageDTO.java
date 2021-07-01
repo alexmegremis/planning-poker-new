@@ -18,11 +18,11 @@ public class MessageDTO<T> {
 
     private T payload;
 
-    public static <T> MessageDTO CREATED(T payload, MessageType messageType) {
-        return MessageDTO.builder().messageType(messageType).status(HttpStatus.CREATED).payload(payload).build();
+    public static <T> MessageDTO<T> CREATED(T payload, MessageType messageType) {
+        return MessageDTO.<T>builder().messageType(messageType).status(HttpStatus.CREATED).payload(payload).build();
     }
 
-    public static <T> MessageDTO OK(T payload, MessageType messageType) {
-        return MessageDTO.builder().messageType(messageType).status(HttpStatus.OK).payload(payload).build();
+    public static <T> MessageDTO<T> OK(T payload, MessageType messageType) {
+        return MessageDTO.<T>builder().messageType(messageType).status(HttpStatus.OK).payload(payload).build();
     }
 }

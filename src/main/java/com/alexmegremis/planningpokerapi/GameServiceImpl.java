@@ -4,8 +4,7 @@ import com.alexmegremis.planningpokerapi.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -43,23 +42,31 @@ public class GameServiceImpl implements GameService {
         message.setOwner(owner);
         SESSIONS.add(message);
 
-        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
-        log.info(">>> created session via WS: {}", result);
+//        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
+        log.info(">>> created session via WS: {}", message);
 
-        return result;
+        return message;
     }
 
     @Override
-    public SessionDTO joinSession(final SessionDTO message, final String sessionId) {
-        PlayerDTO player = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
-        SessionDTO session = SESSIONS.stream().filter(s -> s.getId().equals(message.getId())).findFirst().get();
-        if(session.getPassword() == null || (session.getPassword().equals(message.getPassword()))) {
-            session.getPlayers().add(player);
+    public MessageType joinSession(final SessionDTO message, final String sessionId) {
+        PlayerDTO            player  = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
+        Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getId())).findAny();
+
+        MessageType result = MessageType.FAIL_JOIN_SESSION_NOT_FOUND;
+        if(sessionSearch.isPresent()) {
+            SessionDTO session = sessionSearch.get();
+            if(session.getPassword() == null || (session.getPassword().equals(message.getPassword()))) {
+                session.getPlayers().add(player);
+                message.setName(session.getName());
+                result = MessageType.JOINED_SESSION;
+                log.info(">>> player {} joined session via WS: {}", player, session);
+            } else {
+                result = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
+            }
         }
 
-        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
-        log.info(">>> player {} joined session via WS: {}", player, result);
-        return session;
+        return result;
     }
 
     private <T extends UniqueIdentifiable> boolean exists(final String id, final Collection<T> existing) {
