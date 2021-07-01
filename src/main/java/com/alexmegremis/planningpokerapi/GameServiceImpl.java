@@ -49,6 +49,19 @@ public class GameServiceImpl implements GameService {
         return result;
     }
 
+    @Override
+    public SessionDTO joinSession(final SessionDTO message, final String sessionId) {
+        PlayerDTO player = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
+        SessionDTO session = SESSIONS.stream().filter(s -> s.getId().equals(message.getId())).findFirst().get();
+        if(session.getPassword() == null || (session.getPassword().equals(message.getPassword()))) {
+            session.getPlayers().add(player);
+        }
+
+        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
+        log.info(">>> player {} joined session via WS: {}", player, result);
+        return session;
+    }
+
     private <T extends UniqueIdentifiable> boolean exists(final String id, final Collection<T> existing) {
         return existing.stream().anyMatch(i -> i.getId().equals(id));
     }
