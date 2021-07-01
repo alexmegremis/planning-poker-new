@@ -13,13 +13,15 @@ public class SessionDTO implements UniqueIdentifiable {
     private String name;
     private String password;
     private PlayerDTO owner;
+    private boolean ownerCanVote;
 
     @Builder
-    public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner) {
+    public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner, final boolean ownerCanVote) {
         this.id = id;
         this.name = name;
         this.password = password;
         this.owner = owner;
+        this.ownerCanVote = ownerCanVote;
     }
 
     @JsonIgnore

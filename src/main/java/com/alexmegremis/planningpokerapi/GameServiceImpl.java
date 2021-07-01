@@ -43,7 +43,7 @@ public class GameServiceImpl implements GameService {
         message.setOwner(owner);
         SESSIONS.add(message);
 
-        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).build();
+        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
         log.info(">>> created session via WS: {}", result);
 
         return result;
