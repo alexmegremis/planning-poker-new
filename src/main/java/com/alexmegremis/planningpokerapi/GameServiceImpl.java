@@ -3,6 +3,7 @@ package com.alexmegremis.planningpokerapi;
 import com.alexmegremis.planningpokerapi.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,7 +43,6 @@ public class GameServiceImpl implements GameService {
         message.setOwner(owner);
         SESSIONS.add(message);
 
-//        SessionDTO result = SessionDTO.builder().id(message.getId()).name(message.getName()).owner(message.getOwner()).ownerCanVote(message.isOwnerCanVote()).build();
         log.info(">>> created session via WS: {}", message);
 
         return message;
@@ -50,20 +50,29 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public MessageType joinSession(final SessionDTO message, final String sessionId) {
-        PlayerDTO            player  = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
+
+        Optional<PlayerDTO> playerSearch = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst();
         Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getId())).findAny();
 
-        MessageType result = MessageType.FAIL_JOIN_SESSION_NOT_FOUND;
-        if(sessionSearch.isPresent()) {
+        MessageType result = null;
+
+        if(playerSearch.isEmpty()) {
+            result = MessageType.FAIL_JOIN_SESSION_PLAYER_NOT_FOUND;
+        } else if(sessionSearch.isEmpty()) {
+            result = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
+        } else if(StringUtils.hasLength(sessionSearch.get().getPassword()) && !Objects.equals(sessionSearch.get().getPassword(), message.getPassword())) {
+            result = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
+        } else {
+            PlayerDTO player = playerSearch.get();
             SessionDTO session = sessionSearch.get();
-            if(session.getPassword() == null || (session.getPassword().equals(message.getPassword()))) {
+            if(!session.getPlayers().contains(player)) {
                 session.getPlayers().add(player);
-                message.setName(session.getName());
-                result = MessageType.JOINED_SESSION;
                 log.info(">>> player {} joined session via WS: {}", player, session);
             } else {
-                result = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
+                log.info(">>> player {} had already joined session via WS: {}", player, session);
             }
+            message.setOwner(session.getOwner());
+            result = MessageType.JOINED_SESSION;
         }
 
         return result;

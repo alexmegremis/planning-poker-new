@@ -21,9 +21,11 @@ public class PlayerDTO implements UniqueIdentifiable {
 
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private final Long   created     = Calendar.getInstance().getTimeInMillis();
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private       Long   lastContact = Calendar.getInstance().getTimeInMillis();
     @JsonIgnore
     @EqualsAndHashCode.Exclude

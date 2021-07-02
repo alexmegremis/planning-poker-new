@@ -15,6 +15,7 @@ public class SessionDTO implements UniqueIdentifiable {
     private String id;
     private String name;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @ToString.Exclude
     private String password;
     private PlayerDTO owner;
     private boolean ownerCanVote;
@@ -29,9 +30,15 @@ public class SessionDTO implements UniqueIdentifiable {
     }
 
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private final Calendar created     = Calendar.getInstance();
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private       Calendar lastContact = Calendar.getInstance();
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private final List<PlayerDTO> players = new CopyOnWriteArrayList<>();
 }
