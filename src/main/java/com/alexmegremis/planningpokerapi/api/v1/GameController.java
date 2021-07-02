@@ -1,10 +1,11 @@
 package com.alexmegremis.planningpokerapi.api.v1;
 
 import com.alexmegremis.planningpokerapi.GameService;
-import com.alexmegremis.planningpokerapi.api.model.GameStateDTO;
+import com.alexmegremis.planningpokerapi.api.model.*;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
@@ -43,6 +44,13 @@ public class GameController {
 //        this.messagingTemplate.convertAndSend("/topic/greetings", ">>> PING!!");
 //        this.greeting("Ping");
 //    }
+
+    @MessageMapping("game.vote")
+    @SendToUser ("/queue/reply")
+    public MessageDTO<VoteDTO> voteInSession(@Payload VoteDTO message, SimpMessageHeaderAccessor headerAccessor) {
+        MessageType result = this.gameService.vote(message, headerAccessor.getSessionId());
+        return MessageDTO.<VoteDTO>builder().messageType(result).payload(message).build();
+    }
 
     @MessageMapping ("/message")
     @SendToUser ("/queue/reply")

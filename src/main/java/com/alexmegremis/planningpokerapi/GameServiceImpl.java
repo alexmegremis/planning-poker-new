@@ -37,6 +37,23 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    public MessageType vote(final VoteDTO message, final String sessionId) {
+
+        Optional<PlayerDTO> playerSearch = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst();
+        Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getSession().getId())).findAny();
+
+        MessageType result = null;
+
+        if(playerSearch.isEmpty()) {
+            result = MessageType.FAIL_VOTE_PLAYER_NOT_FOUND;
+        } else if(sessionSearch.isEmpty()) {
+            result = MessageType.FAIL_VOTE_SESSION_NOT_FOUND;
+        }
+
+        return result;
+    }
+
+    @Override
     public SessionDTO createSession(final SessionDTO message, final String sessionId) {
         message.setId(getUniqueId(SESSIONS));
         PlayerDTO owner = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();

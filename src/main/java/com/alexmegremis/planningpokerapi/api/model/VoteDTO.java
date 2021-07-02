@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class VoteDTO {
-    private String player;
+    private PlayerDTO player;
+    private SessionDTO session;
     private String vote;
 }

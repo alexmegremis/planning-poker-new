@@ -9,4 +9,5 @@ public interface GameService {
     SessionDTO createSession(final SessionDTO message, final String sessionId);
     MessageType joinSession(final SessionDTO message, final String sessionId);
     PlayerDTO createPlayer (final PlayerDTO message, final String sessionId);
+    MessageType vote(final VoteDTO message, final String sessionId);
 }
