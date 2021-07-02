@@ -4,21 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Data
 @ToString
 public class SessionDTO implements UniqueIdentifiable {
 
-    private String id;
-    private String name;
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String    id;
+    private String    name;
+    @JsonProperty (access = JsonProperty.Access.WRITE_ONLY)
     @ToString.Exclude
-    private String password;
+    private String    password;
     private PlayerDTO owner;
-    private boolean ownerCanVote;
+    private boolean   ownerCanVote;
 
     @Builder
     public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner, final boolean ownerCanVote) {
@@ -37,8 +37,13 @@ public class SessionDTO implements UniqueIdentifiable {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private       Calendar lastContact = Calendar.getInstance();
+
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private final List<PlayerDTO> players = new CopyOnWriteArrayList<>();
+    private final List<PlayerDTO>        players = new CopyOnWriteArrayList<>();
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private final Map<PlayerDTO, String> votes   = new ConcurrentHashMap<>();
 }

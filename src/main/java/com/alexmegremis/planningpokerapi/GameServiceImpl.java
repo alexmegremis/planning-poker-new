@@ -43,11 +43,25 @@ public class GameServiceImpl implements GameService {
         Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getSession().getId())).findAny();
 
         MessageType result = null;
+        PlayerDTO player = null;
+        SessionDTO session = null;
 
         if(playerSearch.isEmpty()) {
             result = MessageType.FAIL_VOTE_PLAYER_NOT_FOUND;
         } else if(sessionSearch.isEmpty()) {
             result = MessageType.FAIL_VOTE_SESSION_NOT_FOUND;
+        } else {
+            player = playerSearch.get();
+            session = sessionSearch.get();
+            if (! session.getPlayers().contains(player)) {
+                result = MessageType.FAIL_VOTE_PLAYER_NOT_IN_SESSION;
+            }
+        }
+
+        if(result == null) {
+            session.getVotes().put(player, message.getVote());
+            result = MessageType.VOTE_ACK;
+            log.info(">>> Player {} voted {} for session {}", player, message.getVote(), session);
         }
 
         return result;
@@ -58,6 +72,7 @@ public class GameServiceImpl implements GameService {
         message.setId(getUniqueId(SESSIONS));
         PlayerDTO owner = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
         message.setOwner(owner);
+        message.getPlayers().add(owner);
         SESSIONS.add(message);
 
         log.info(">>> created session via WS: {}", message);

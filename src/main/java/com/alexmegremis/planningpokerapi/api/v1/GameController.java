@@ -45,9 +45,11 @@ public class GameController {
 //        this.greeting("Ping");
 //    }
 
-    @MessageMapping("game.vote")
+    @MessageMapping("game.vote.{gameSessionID}")
     @SendToUser ("/queue/reply")
-    public MessageDTO<VoteDTO> voteInSession(@Payload VoteDTO message, SimpMessageHeaderAccessor headerAccessor) {
+    public MessageDTO<VoteDTO> voteInSession(@Payload final VoteDTO message,
+                                             @DestinationVariable final String gameSessionID,
+                                             final SimpMessageHeaderAccessor headerAccessor) {
         MessageType result = this.gameService.vote(message, headerAccessor.getSessionId());
         return MessageDTO.<VoteDTO>builder().messageType(result).payload(message).build();
     }
