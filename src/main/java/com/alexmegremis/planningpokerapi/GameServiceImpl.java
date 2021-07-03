@@ -6,14 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.alexmegremis.planningpokerapi.GameDataAware.*;
 
 @Slf4j
 @Service
-public class GameServiceImpl implements GameService {
-
-    public static final List<SessionDTO> SESSIONS = new CopyOnWriteArrayList<>();
-    public static final List<PlayerDTO>  PLAYERS  = new CopyOnWriteArrayList<>();
+public class GameServiceImpl implements GameService, GameDataAware {
 
     public <T extends UniqueIdentifiable> String getUniqueId(final Collection<T> existing) {
 
@@ -27,30 +25,47 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public PlayerDTO createPlayer(final PlayerDTO message, final String sessionId) {
+    public PlayerDTO createPlayer(final PlayerDTO message, final String userSessionId) {
         message.setId(getUniqueId(PLAYERS));
-        message.setSessionID(sessionId);
+        message.setSessionID(userSessionId);
         PLAYERS.add(message);
 
         log.info(">>> created player via WS: {}", message);
         return message;
     }
 
-    @Override
-    public MessageType vote(final VoteDTO message, final String sessionId) {
-
-        Optional<PlayerDTO> playerSearch = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst();
-        Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getSession().getId())).findAny();
-
+    private MessageType validateBasicVoteActivity(Optional<PlayerDTO> playerSearch, Optional<SessionDTO> sessionSearch) {
         MessageType result = null;
-        PlayerDTO player = null;
-        SessionDTO session = null;
-
-        if(playerSearch.isEmpty()) {
+        if (playerSearch.isEmpty()) {
             result = MessageType.FAIL_VOTE_PLAYER_NOT_FOUND;
-        } else if(sessionSearch.isEmpty()) {
+        } else if (sessionSearch.isEmpty()) {
             result = MessageType.FAIL_VOTE_SESSION_NOT_FOUND;
-        } else {
+        }
+        return result;
+    }
+
+    private MessageType validateVoteManagementActivity(Optional<PlayerDTO> playerSearch, Optional<SessionDTO> sessionSearch) {
+        MessageType result = validateBasicVoteActivity(playerSearch, sessionSearch);
+        if(result == null) {
+            if(sessionSearch.get().getOwner() != playerSearch.get()) {
+                result = MessageType.FAIL_VOTE_MANAGEMENT_NOT_OWNER;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public MessageType vote(final VoteDTO message, final String userSessionId) {
+
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(message.getSession().getId());
+
+        PlayerDTO   player  = null;
+        SessionDTO  session = null;
+
+        MessageType result  = validateBasicVoteActivity(playerSearch, sessionSearch);
+
+        if(result == null) {
             player = playerSearch.get();
             session = sessionSearch.get();
             if (! session.getPlayers().contains(player)) {
@@ -58,7 +73,7 @@ public class GameServiceImpl implements GameService {
             }
         }
 
-        if(result == null) {
+        if (result == null) {
             session.getVotes().put(player, message.getVote());
             result = MessageType.VOTE_ACK;
             log.info(">>> Player {} voted {} for session {}", player, message.getVote(), session);
@@ -68,9 +83,44 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public SessionDTO createSession(final SessionDTO message, final String sessionId) {
+    public MessageType openVoting(final String gameSessionID, final String userSessionId) {
+
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType result  = validateVoteManagementActivity(playerSearch, sessionSearch);
+
+        if(result == null) {
+            sessionSearch.get().setVotingOpen(true);
+            result = MessageType.VOTE_OPEN;
+        }
+        return result;
+    }
+
+    @Override
+    public MessageType closeVoting(final String gameSessionID, final String userSessionId) {
+
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType result  = validateVoteManagementActivity(playerSearch, sessionSearch);
+
+        if(result == null) {
+            sessionSearch.get().setVotingOpen(false);
+            result = MessageType.VOTE_CLOSE;
+        }
+        return result;
+    }
+
+    @Override
+    public MessageType resetVoting(final String gameSessionID, final String userSessionId) {
+        return null;
+    }
+
+    @Override
+    public SessionDTO createSession(final SessionDTO message, final String userSessionId) {
         message.setId(getUniqueId(SESSIONS));
-        PlayerDTO owner = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst().get();
+        PlayerDTO owner = findPlayer(userSessionId).get();
         message.setOwner(owner);
         message.getPlayers().add(owner);
         SESSIONS.add(message);
@@ -81,23 +131,23 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public MessageType joinSession(final SessionDTO message, final String sessionId) {
+    public MessageType joinSession(final SessionDTO message, final String userSessionId) {
 
-        Optional<PlayerDTO> playerSearch = PLAYERS.stream().filter(p -> p.getSessionID().equals(sessionId)).findFirst();
-        Optional<SessionDTO> sessionSearch = SESSIONS.stream().filter(s -> s.getId().equals(message.getId())).findAny();
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(message.getId());
 
         MessageType result = null;
 
-        if(playerSearch.isEmpty()) {
+        if (playerSearch.isEmpty()) {
             result = MessageType.FAIL_JOIN_SESSION_PLAYER_NOT_FOUND;
-        } else if(sessionSearch.isEmpty()) {
+        } else if (sessionSearch.isEmpty()) {
             result = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
-        } else if(StringUtils.hasLength(sessionSearch.get().getPassword()) && !Objects.equals(sessionSearch.get().getPassword(), message.getPassword())) {
+        } else if (StringUtils.hasLength(sessionSearch.get().getPassword()) && ! Objects.equals(sessionSearch.get().getPassword(), message.getPassword())) {
             result = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
         } else {
-            PlayerDTO player = playerSearch.get();
+            PlayerDTO  player  = playerSearch.get();
             SessionDTO session = sessionSearch.get();
-            if(!session.getPlayers().contains(player)) {
+            if (! session.getPlayers().contains(player)) {
                 session.getPlayers().add(player);
                 log.info(">>> player {} joined session via WS: {}", player, session);
             } else {

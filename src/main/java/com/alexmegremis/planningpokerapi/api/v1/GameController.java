@@ -54,6 +54,18 @@ public class GameController {
         return MessageDTO.<VoteDTO>builder().messageType(result).payload(message).build();
     }
 
+    @MessageMapping("game.voteOpen.{gameSessionID}")
+    public void openVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageType result = this.gameService.openVoting(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
+    }
+
+    @MessageMapping("game.voteClose.{gameSessionID}")
+    public void closeVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageType result = this.gameService.closeVoting(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
+    }
+
     @MessageMapping ("/message")
     @SendToUser ("/queue/reply")
     public String processMessageFromClient(@Payload String message, Principal principal) throws Exception {

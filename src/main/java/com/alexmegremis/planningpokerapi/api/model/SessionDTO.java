@@ -19,6 +19,7 @@ public class SessionDTO implements UniqueIdentifiable {
     private String    password;
     private PlayerDTO owner;
     private boolean   ownerCanVote;
+    private boolean   votingOpen = false;
 
     @Builder
     public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner, final boolean ownerCanVote) {
