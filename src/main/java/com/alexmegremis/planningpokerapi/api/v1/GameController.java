@@ -48,20 +48,20 @@ public class GameController {
 
     // This is likely unnecessary
     @MessageMapping("game.vote.{gameSessionID}")
-    @SendToUser ("/queue/reply")
-    public MessageDTO<VoteDTO> voteInSession(@Payload final VoteDTO message,
+//    @SendToUser ("/queue/reply")
+//    public MessageDTO<VoteDTO> voteInSession(@Payload final VoteDTO message,
+    public void voteInSession(@Payload final VoteDTO message,
                                              @DestinationVariable final String gameSessionID,
                                              final SimpMessageHeaderAccessor headerAccessor) {
         MessageType result = this.gameService.vote(message, headerAccessor.getSessionId());
         broadcastVotesInSession(gameSessionID);
-        return MessageDTO.<VoteDTO>builder().messageType(result).payload(message).build();
+//        return MessageDTO.<VoteDTO>builder().messageType(result).build();
     }
 
-    @MessageMapping("game.votes.{gameSessionID}")
-    public void getVotesInSession(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, String> votes = new HashMap<>();
-        MessageType result = this.gameService.getVotesInSession(gameSessionID, headerAccessor.getSessionId(), votes);
-        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).payload(votes));
+    @MessageMapping("game.{gameSessionID}")
+    public void getSession(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.getSessionUpdate(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
 //    class VotesDTO {
@@ -71,9 +71,8 @@ public class GameController {
 //        }
 //    }
     public void broadcastVotesInSession(final String gameSessionID) {
-        Map<String, String> votes = new HashMap<>();
-        MessageType result = this.gameService.getVotesInSession(gameSessionID, votes);
-        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).payload(votes).build());
+        MessageDTO<SessionUpdateDTO> result = this.gameService.getSessionUpdate(gameSessionID);
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
     @MessageMapping("game.voteOpen.{gameSessionID}")

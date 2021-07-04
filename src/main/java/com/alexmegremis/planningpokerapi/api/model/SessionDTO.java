@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Data
@@ -18,10 +20,16 @@ public class SessionDTO implements UniqueIdentifiable {
     @ToString.Exclude
     private String    password;
     private PlayerDTO owner;
-    private boolean   ownerCanVote;
-    private boolean   playersVisible = true;
-    private boolean   votingOpen = false;
+    private Boolean   ownerCanVote;
+    private Boolean   playersVisible = true;
+    private Boolean   votingOpen     = false;
 
+    private long      version = 1;
+
+    public void updated() {
+        this.version++;
+        updated = ZonedDateTime.now();
+    }
     @Builder
     public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner,
                       final boolean ownerCanVote, final boolean playersVisible) {
@@ -36,12 +44,20 @@ public class SessionDTO implements UniqueIdentifiable {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private final Calendar created     = Calendar.getInstance();
+    private final ZonedDateTime created = ZonedDateTime.now();
+    public ZonedDateTime getCreated() {
+        return ZonedDateTime.ofInstant(created.toInstant(), created.getZone());
+    }
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private       Calendar lastContact = Calendar.getInstance();
+    private ZonedDateTime updated = ZonedDateTime.now();
+    public final ZonedDateTime getUpdated() {
+        return ZonedDateTime.ofInstant(updated.toInstant(), updated.getZone());
+    }
+    private void setUpdated(final ZonedDateTime updated) {
 
+    }
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

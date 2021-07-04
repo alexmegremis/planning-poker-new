@@ -75,6 +75,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
 
         if (result == null) {
             session.getVotes().put(player, message.getVote());
+            session.updated();
             result = MessageType.VOTE_ACK;
             log.info(">>> Player {} voted {} for session {}", player, message.getVote(), session);
         }
@@ -118,42 +119,46 @@ public class GameServiceImpl implements GameService, GameDataAware {
     }
 
     @Override
-    public MessageType getVotesInSession(final String gameSessionID, final String userSessionId, final Map<String, String> votes) {
+    public MessageDTO<SessionUpdateDTO> getSessionUpdate(final String gameSessionID, final String userSessionId) {
 
         Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
         Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
 
-        MessageType result = validateBasicVoteActivity(playerSearch, sessionSearch);
-
-        if(result == null) {
-            doGetVotesInSession(sessionSearch.get(), votes);
-            result = MessageType.VOTE_UPDATE;
+        MessageType messageType = validateBasicVoteActivity(playerSearch, sessionSearch);
+        SessionUpdateDTO update = null;
+        if(messageType == null) {
+            messageType = MessageType.VOTE_UPDATE;
+            update = SessionUpdateDTO.create(sessionSearch.get());
         }
+
+        final MessageDTO<SessionUpdateDTO> result = MessageDTO.<SessionUpdateDTO>builder().messageType(messageType).payload(update).build();
         return result;
     }
 
     @Override
-    public MessageType getVotesInSession(final String gameSessionID, final Map<String, String> votes) {
+    public MessageDTO<SessionUpdateDTO> getSessionUpdate(final String gameSessionID) {
 
         Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
 
-        MessageType result = null;
+        MessageType messageType = null;
+        SessionUpdateDTO update = null;
 
         if(sessionSearch.isPresent()) {
-            doGetVotesInSession(sessionSearch.get(), votes);
-            result = MessageType.VOTE_UPDATE;
+            messageType = MessageType.VOTE_UPDATE;
+            update = SessionUpdateDTO.create(sessionSearch.get());
         } else {
-            result = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
+            messageType = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
         }
 
+        final MessageDTO<SessionUpdateDTO> result = MessageDTO.<SessionUpdateDTO>builder().messageType(messageType).payload(update).build();
         return result;
     }
 
     private void doGetVotesInSession(final SessionDTO session, final Map<String, String> votes) {
         votes.clear();
         session.getVotes().entrySet().stream().forEach(e -> {
-            String key = session.isPlayersVisible() ? e.getKey().getName() : "##HIDE##";
-            String value = session.isVotingOpen() ? "##HIDE##" : e.getValue();
+            String key = session.getPlayersVisible() ? e.getKey().getName() : "##HIDE##";
+            String value = session.getVotingOpen() ? "##HIDE##" : e.getValue();
             votes.put(key, value);
         });
     }
@@ -195,7 +200,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
                 log.info(">>> player {} had already joined session via WS: {}", player, session);
             }
             message.setOwner(session.getOwner());
-            message.setVotingOpen(session.isVotingOpen());
+            message.setVotingOpen(session.getVotingOpen());
             result = MessageType.JOINED_SESSION;
         }
 
