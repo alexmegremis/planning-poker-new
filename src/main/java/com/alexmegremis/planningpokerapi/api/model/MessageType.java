@@ -13,5 +13,7 @@ public enum MessageType {
     FAIL_VOTE_MANAGEMENT_NOT_OWNER,
     VOTE_OPEN,
     VOTE_CLOSE,
-    VOTE_ACK
+    VOTE_ACK,
+    VOTE_UPDATE,
+    OK
 }

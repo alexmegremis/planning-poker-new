@@ -11,6 +11,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -45,13 +46,34 @@ public class GameController {
 //        this.greeting("Ping");
 //    }
 
+    // This is likely unnecessary
     @MessageMapping("game.vote.{gameSessionID}")
     @SendToUser ("/queue/reply")
     public MessageDTO<VoteDTO> voteInSession(@Payload final VoteDTO message,
                                              @DestinationVariable final String gameSessionID,
                                              final SimpMessageHeaderAccessor headerAccessor) {
         MessageType result = this.gameService.vote(message, headerAccessor.getSessionId());
+        broadcastVotesInSession(gameSessionID);
         return MessageDTO.<VoteDTO>builder().messageType(result).payload(message).build();
+    }
+
+    @MessageMapping("game.votes.{gameSessionID}")
+    public void getVotesInSession(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        Map<String, String> votes = new HashMap<>();
+        MessageType result = this.gameService.getVotesInSession(gameSessionID, headerAccessor.getSessionId(), votes);
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).payload(votes));
+    }
+
+//    class VotesDTO {
+//        public Map<String, String> votes;
+//        public VotesDTO(final Map<String, String> votes) {
+//            this.votes = votes;
+//        }
+//    }
+    public void broadcastVotesInSession(final String gameSessionID) {
+        Map<String, String> votes = new HashMap<>();
+        MessageType result = this.gameService.getVotesInSession(gameSessionID, votes);
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).payload(votes).build());
     }
 
     @MessageMapping("game.voteOpen.{gameSessionID}")

@@ -3,6 +3,7 @@ package com.alexmegremis.planningpokerapi;
 import com.alexmegremis.planningpokerapi.api.model.*;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface GameService {
     <T extends UniqueIdentifiable> String getUniqueId(final Collection<T> existing);
@@ -13,4 +14,6 @@ public interface GameService {
     MessageType openVoting(final String gameSessionID, final String userSessionId);
     MessageType closeVoting(final String gameSessionID, final String userSessionId);
     MessageType resetVoting(final String gameSessionID, final String userSessionId);
+    MessageType getVotesInSession(final String gameSessionID, final String userSessionId, final Map<String, String> votes);
+    MessageType getVotesInSession(final String gameSessionID, final Map<String, String> votes);
 }

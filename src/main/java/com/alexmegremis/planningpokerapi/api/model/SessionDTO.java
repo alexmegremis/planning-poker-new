@@ -19,15 +19,18 @@ public class SessionDTO implements UniqueIdentifiable {
     private String    password;
     private PlayerDTO owner;
     private boolean   ownerCanVote;
+    private boolean   playersVisible = true;
     private boolean   votingOpen = false;
 
     @Builder
-    public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner, final boolean ownerCanVote) {
+    public SessionDTO(final String id, final String name, final String password, final PlayerDTO owner,
+                      final boolean ownerCanVote, final boolean playersVisible) {
         this.id = id;
         this.name = name;
         this.password = password;
         this.owner = owner;
         this.ownerCanVote = ownerCanVote;
+        this.playersVisible = playersVisible;
     }
 
     @JsonIgnore
@@ -46,5 +49,5 @@ public class SessionDTO implements UniqueIdentifiable {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private final Map<PlayerDTO, String> votes   = new ConcurrentHashMap<>();
+    private final Map<PlayerDTO, String> votes   = Collections.synchronizedMap(new LinkedHashMap<>());
 }

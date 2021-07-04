@@ -118,6 +118,47 @@ public class GameServiceImpl implements GameService, GameDataAware {
     }
 
     @Override
+    public MessageType getVotesInSession(final String gameSessionID, final String userSessionId, final Map<String, String> votes) {
+
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType result = validateBasicVoteActivity(playerSearch, sessionSearch);
+
+        if(result == null) {
+            doGetVotesInSession(sessionSearch.get(), votes);
+            result = MessageType.VOTE_UPDATE;
+        }
+        return result;
+    }
+
+    @Override
+    public MessageType getVotesInSession(final String gameSessionID, final Map<String, String> votes) {
+
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType result = null;
+
+        if(sessionSearch.isPresent()) {
+            doGetVotesInSession(sessionSearch.get(), votes);
+            result = MessageType.VOTE_UPDATE;
+        } else {
+            result = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
+        }
+
+        return result;
+    }
+
+    private void doGetVotesInSession(final SessionDTO session, final Map<String, String> votes) {
+        votes.clear();
+        session.getVotes().entrySet().stream().forEach(e -> {
+            String key = session.isPlayersVisible() ? e.getKey().getName() : "##HIDE##";
+            String value = session.isVotingOpen() ? "##HIDE##" : e.getValue();
+            votes.put(key, value);
+        });
+    }
+
+    @Override
     public SessionDTO createSession(final SessionDTO message, final String userSessionId) {
         message.setId(getUniqueId(SESSIONS));
         PlayerDTO owner = findPlayer(userSessionId).get();
@@ -154,6 +195,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
                 log.info(">>> player {} had already joined session via WS: {}", player, session);
             }
             message.setOwner(session.getOwner());
+            message.setVotingOpen(session.isVotingOpen());
             result = MessageType.JOINED_SESSION;
         }
 
