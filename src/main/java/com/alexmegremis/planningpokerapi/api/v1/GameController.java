@@ -12,7 +12,6 @@ import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -30,18 +29,11 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @MessageMapping ("/hello")
-    @SendTo ("/topic/greetings")
-    public String greeting(String name) {
-        return "Hello " + name;
-    }
-
     // This is likely unnecessary
     @MessageMapping("game.vote.{gameSessionID}")
     public void voteInSession(@Payload final VoteDTO message,
                                              @DestinationVariable final String gameSessionID,
                                              final SimpMessageHeaderAccessor headerAccessor) {
-        MessageType result = this.gameService.vote(message, headerAccessor.getSessionId());
         broadcastVotesInSession(gameSessionID);
     }
 
@@ -61,7 +53,17 @@ public class GameController {
 
     @SubscribeMapping("/game/foobartest")
     public void handleTestSubscribeEvent() {
-        log.info(">>> Handling FOOBARTEST subscribe");
+        log.info(">>> Handling GAME/FOOBARTEST subscribe");
+    }
+
+    @SubscribeMapping("/app/game/foobartest")
+    public void handleTestSubscribeEvent02() {
+        log.info(">>> Handling APP/GAME/FOOBARTEST subscribe");
+    }
+
+    @SubscribeMapping("/foobartest")
+    public void handleTestSubscribeEvent04() {
+        log.info(">>> Handling /FOOBARTEST subscribe");
     }
 
     @SubscribeMapping("public")
