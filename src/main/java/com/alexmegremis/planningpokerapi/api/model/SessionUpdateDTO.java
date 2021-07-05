@@ -3,8 +3,7 @@ package com.alexmegremis.planningpokerapi.api.model;
 import lombok.*;
 
 import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @ToString
 @Getter
@@ -54,7 +53,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
         session.getVotes().entrySet().stream().forEach(e -> {
             String key = session.getPlayersVisible() ? e.getKey().getName() : "##HIDE##";
             String value = session.getVotingOpen() ? "##HIDE##" : e.getValue();
-            sessionUpdate.votes.put(key, value);
+            sessionUpdate.votes.add(new String[]{key, value});
         });
     }
 
@@ -65,5 +64,5 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
     @ToString.Exclude
     private final ZonedDateTime updated;
     @ToString.Exclude
-    private final Map<String, String> votes   = new LinkedHashMap<>();
+    private final List<String[]> votes = new LinkedList<>();
 }

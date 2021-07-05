@@ -169,6 +169,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
         PlayerDTO owner = findPlayer(userSessionId).get();
         message.setOwner(owner);
         message.getPlayers().add(owner);
+        initiateFirstVote(message, owner);
         SESSIONS.add(message);
 
         log.info(">>> created session via WS: {}", message);
@@ -195,6 +196,8 @@ public class GameServiceImpl implements GameService, GameDataAware {
             SessionDTO session = sessionSearch.get();
             if (! session.getPlayers().contains(player)) {
                 session.getPlayers().add(player);
+                initiateFirstVote(session, player);
+
                 log.info(">>> player {} joined session via WS: {}", player, session);
             } else {
                 log.info(">>> player {} had already joined session via WS: {}", player, session);
@@ -205,6 +208,11 @@ public class GameServiceImpl implements GameService, GameDataAware {
         }
 
         return result;
+    }
+
+    private void initiateFirstVote(final SessionDTO session, final PlayerDTO player) {
+        session.getVotes().put(player, "");
+        session.updated();
     }
 
     private <T extends UniqueIdentifiable> boolean exists(final String id, final Collection<T> existing) {

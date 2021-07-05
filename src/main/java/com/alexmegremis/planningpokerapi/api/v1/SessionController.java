@@ -13,9 +13,13 @@ import org.springframework.stereotype.Controller;
 @Slf4j
 public class SessionController {
 
-    private final GameService gameService;
+    private final GameService    gameService;
+    private final GameController gameController;
 
-    public SessionController(final GameService gameService) {this.gameService = gameService;}
+    public SessionController(final GameService gameService, final GameController gameController) {
+        this.gameService = gameService;
+        this.gameController = gameController;
+    }
 
     @MessageMapping ("game.newSession")
     @SendToUser ("/queue/reply")
