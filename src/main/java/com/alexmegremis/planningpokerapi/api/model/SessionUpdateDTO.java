@@ -14,12 +14,13 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
     private final PlayerDTO owner;
     private final Boolean   ownerCanVote;
     private final Boolean   playersVisible;
+    private final Boolean   votesVisible;
     private final Boolean   votingOpen;
     private final Long      version;
 
     @Builder
     public SessionUpdateDTO(final String id, final String name, final PlayerDTO owner,
-                            final boolean ownerCanVote, final boolean votingOpen, final boolean playersVisible,
+                            final boolean ownerCanVote, final boolean votingOpen, final boolean playersVisible, final boolean votesVisible,
                             final long version, final ZonedDateTime created, final ZonedDateTime updated) {
         this.id = id;
         this.name = name;
@@ -27,6 +28,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
         this.ownerCanVote = ownerCanVote;
         this.votingOpen = votingOpen;
         this.playersVisible = playersVisible;
+        this.votesVisible = votesVisible;
         this.version = version;
         this.created = created;
         this.updated = updated;
@@ -39,6 +41,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
                                                   .owner(session.getOwner())
                                                   .ownerCanVote(session.getOwnerCanVote())
                                                   .votingOpen(session.getVotingOpen())
+                                                  .votesVisible(session.getVotesVisible())
                                                   .playersVisible(session.getPlayersVisible())
                                                   .version(session.getVersion())
                                                   .created(session.getCreated())

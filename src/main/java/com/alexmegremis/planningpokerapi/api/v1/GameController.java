@@ -77,16 +77,28 @@ public class GameController {
         this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
-    @MessageMapping("game.voteOpen.{gameSessionID}")
+    @MessageMapping("game.openVoting.{gameSessionID}")
     public void openVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
         MessageType result = this.gameService.openVoting(gameSessionID, headerAccessor.getSessionId());
         this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
     }
 
-    @MessageMapping("game.voteClose.{gameSessionID}")
+    @MessageMapping("game.closeVoting.{gameSessionID}")
     public void closeVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
         MessageType result = this.gameService.closeVoting(gameSessionID, headerAccessor.getSessionId());
         this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
+    }
+
+    @MessageMapping("game.showVotes.{gameSessionID}")
+    public void showVotes(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.showVotes(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
+    }
+
+    @MessageMapping("game.hideVotes.{gameSessionID}")
+    public void hideVotes(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.hideVotes(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
     @MessageMapping ("/message")

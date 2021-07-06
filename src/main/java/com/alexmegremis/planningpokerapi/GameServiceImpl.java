@@ -1,11 +1,15 @@
 package com.alexmegremis.planningpokerapi;
 
 import com.alexmegremis.planningpokerapi.api.model.*;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.alexmegremis.planningpokerapi.GameDataAware.*;
 
@@ -62,6 +66,27 @@ public class GameServiceImpl implements GameService, GameDataAware {
         return result;
     }
 
+    @SneakyThrows
+    private <T> MessageDTO<SessionUpdateDTO> doVoteManagementFlag(final String gameSessionID, final String userSessionId, final String flagName, final Class<T> type, final T flagValue) {
+
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType messageType  = validateVoteManagementActivity(playerSearch, sessionSearch);
+        SessionUpdateDTO update = null;
+        if(messageType == null) {
+            SessionDTO session = sessionSearch.get();
+            final Method method = Arrays.stream(session.getClass().getDeclaredMethods()).filter(m -> m.getName().equalsIgnoreCase(("set" + flagName)) && m.getParameterTypes()[0] == type).findFirst().get();
+//            final Method method = session.getClass().getMethod("get" + flagName, type);
+            method.invoke(session, flagValue);
+            messageType = MessageType.VOTE_UPDATE;
+            update = SessionUpdateDTO.create(sessionSearch.get());
+        }
+
+        final MessageDTO<SessionUpdateDTO> result = MessageDTO.<SessionUpdateDTO>builder().messageType(messageType).payload(update).build();
+        return result;
+    }
+
     @Override
     public MessageType openVoting(final String gameSessionID, final String userSessionId) {
 
@@ -93,8 +118,28 @@ public class GameServiceImpl implements GameService, GameDataAware {
     }
 
     @Override
-    public MessageType resetVoting(final String gameSessionID, final String userSessionId) {
+    public MessageDTO<SessionUpdateDTO> resetVoting(final String gameSessionID, final String userSessionId) {
         return null;
+    }
+
+    @Override
+    public MessageDTO<SessionUpdateDTO> showVotes(final String gameSessionID, final String userSessionId) {
+        return doVoteManagementFlag(gameSessionID, userSessionId, "votesVisible", Boolean.class, true);
+    }
+
+    @Override
+    public MessageDTO<SessionUpdateDTO> hideVotes(final String gameSessionID, final String userSessionId) {
+        return doVoteManagementFlag(gameSessionID, userSessionId, "votesVisible", Boolean.class, false);
+    }
+
+    @Override
+    public MessageDTO<SessionUpdateDTO> showPlayers(final String gameSessionID, final String userSessionId) {
+        return doVoteManagementFlag(gameSessionID, userSessionId, "playersVisible", Boolean.class, true);
+    }
+
+    @Override
+    public MessageDTO<SessionUpdateDTO> hidePlayers(final String gameSessionID, final String userSessionId) {
+        return doVoteManagementFlag(gameSessionID, userSessionId, "playersVisible", Boolean.class, false);
     }
 
     @Override

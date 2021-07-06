@@ -22,6 +22,7 @@ public class SessionDTO implements UniqueIdentifiable {
     private PlayerDTO owner;
     private Boolean   ownerCanVote;
     private Boolean   playersVisible = true;
+    private Boolean   votesVisible   = true;
     private Boolean   votingOpen     = false;
 
     private long      version = 1;
