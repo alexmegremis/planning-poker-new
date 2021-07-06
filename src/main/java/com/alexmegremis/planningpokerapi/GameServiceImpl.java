@@ -13,27 +13,6 @@ import static com.alexmegremis.planningpokerapi.GameDataAware.*;
 @Service
 public class GameServiceImpl implements GameService, GameDataAware {
 
-    public <T extends UniqueIdentifiable> String getUniqueId(final Collection<T> existing) {
-
-        String newId;
-
-        do {
-            newId = String.valueOf(Math.toIntExact(Math.round(Math.random() * ((9999999 - 1000000) + 1)) + 1000000));
-        } while (exists(newId, existing));
-
-        return newId;
-    }
-
-    @Override
-    public PlayerDTO createPlayer(final PlayerDTO message, final String userSessionId) {
-        message.setId(getUniqueId(PLAYERS));
-        message.setSessionID(userSessionId);
-        PLAYERS.add(message);
-
-        log.info(">>> created player via WS: {}", message);
-        return message;
-    }
-
     private MessageType validateBasicVoteActivity(Optional<PlayerDTO> playerSearch, Optional<SessionDTO> sessionSearch) {
         MessageType result = null;
         if (playerSearch.isEmpty()) {
@@ -154,43 +133,59 @@ public class GameServiceImpl implements GameService, GameDataAware {
         return result;
     }
 
-    private void doGetVotesInSession(final SessionDTO session, final Map<String, String> votes) {
-        votes.clear();
-        session.getVotes().entrySet().stream().forEach(e -> {
-            String key = session.getPlayersVisible() ? e.getKey().getName() : "##HIDE##";
-            String value = session.getVotingOpen() ? "##HIDE##" : e.getValue();
-            votes.put(key, value);
-        });
+    public <T extends UniqueIdentifiable> String getUniqueId(final Collection<T> existing) {
+
+        String newId;
+
+        do {
+            newId = String.valueOf(Math.toIntExact(Math.round(Math.random() * ((9999999 - 1000000) + 1)) + 1000000));
+        } while (exists(newId, existing));
+
+        return newId;
     }
 
     @Override
-    public SessionDTO createSession(final SessionDTO message, final String userSessionId) {
-        message.setId(getUniqueId(SESSIONS));
-        PlayerDTO owner = findPlayer(userSessionId).get();
-        message.setOwner(owner);
-        message.getPlayers().add(owner);
-        initiateFirstVote(message, owner);
-        SESSIONS.add(message);
+    public PlayerDTO createPlayer(final PlayerDTO message, final String userSessionId) {
+        message.setId(getUniqueId(PLAYERS));
+        message.setSessionID(userSessionId);
+        PLAYERS.add(message);
 
-        log.info(">>> created session via WS: {}", message);
-
+        log.info(">>> created player via WS: {}", message);
         return message;
     }
 
     @Override
-    public MessageType joinSession(final SessionDTO message, final String userSessionId) {
+    public MessageDTO<SessionUpdateDTO> createSession(final SessionDTO message, final String userSessionId) {
+        message.setId(getUniqueId(SESSIONS));
+        PlayerDTO owner = findPlayer(userSessionId).get();
+        message.setOwner(owner);
+        message.getPlayers().add(owner);
+        if(message.getOwnerCanVote()) {
+            initiateFirstVote(message, owner);
+        }
+        SESSIONS.add(message);
+
+        SessionUpdateDTO update = SessionUpdateDTO.create(message);
+        MessageDTO<SessionUpdateDTO> result = MessageDTO.CREATED(update, MessageType.CREATED_SESSION);
+        log.info(">>> created session via WS: {}", message);
+
+        return result;
+    }
+
+    @Override
+    public MessageDTO<SessionUpdateDTO> joinSession(final SessionDTO message, final String userSessionId) {
 
         Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
         Optional<SessionDTO> sessionSearch = findSession(message.getId());
 
-        MessageType result = null;
-
+        MessageType messageType = null;
+        MessageDTO<SessionUpdateDTO> result = null;
         if (playerSearch.isEmpty()) {
-            result = MessageType.FAIL_JOIN_SESSION_PLAYER_NOT_FOUND;
+            messageType = MessageType.FAIL_JOIN_SESSION_PLAYER_NOT_FOUND;
         } else if (sessionSearch.isEmpty()) {
-            result = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
+            messageType = MessageType.FAIL_JOIN_SESSION_SESSION_NOT_FOUND;
         } else if (StringUtils.hasLength(sessionSearch.get().getPassword()) && ! Objects.equals(sessionSearch.get().getPassword(), message.getPassword())) {
-            result = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
+            messageType = MessageType.FAIL_JOIN_SESSION_AUTH_FAIL;
         } else {
             PlayerDTO  player  = playerSearch.get();
             SessionDTO session = sessionSearch.get();
@@ -202,9 +197,11 @@ public class GameServiceImpl implements GameService, GameDataAware {
             } else {
                 log.info(">>> player {} had already joined session via WS: {}", player, session);
             }
-            message.setOwner(session.getOwner());
-            message.setVotingOpen(session.getVotingOpen());
-            result = MessageType.JOINED_SESSION;
+
+            result = MessageDTO.<SessionUpdateDTO>builder().messageType(MessageType.JOINED_SESSION).payload(SessionUpdateDTO.create(session)).build();
+        }
+        if(result == null) {
+            result = MessageDTO.<SessionUpdateDTO>builder().messageType(messageType).build();
         }
 
         return result;

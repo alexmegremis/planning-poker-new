@@ -49,9 +49,4 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             }
         };
     }
-
-    @EventListener
-    public void handleSubscribeEvent(final SessionSubscribeEvent event) {
-        log.info(">>> Subscription to {}", event.getMessage().getHeaders().get("simpDestination"));
-    }
 }

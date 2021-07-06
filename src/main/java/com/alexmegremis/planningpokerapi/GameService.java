@@ -7,8 +7,8 @@ import java.util.Map;
 
 public interface GameService {
     <T extends UniqueIdentifiable> String getUniqueId(final Collection<T> existing);
-    SessionDTO createSession(final SessionDTO message, final String userSessionId);
-    MessageType joinSession(final SessionDTO message, final String userSessionId);
+    MessageDTO<SessionUpdateDTO> createSession(final SessionDTO message, final String userSessionId);
+    MessageDTO<SessionUpdateDTO> joinSession(final SessionDTO message, final String userSessionId);
     PlayerDTO createPlayer (final PlayerDTO message, final String userSessionId);
     MessageType vote(final VoteDTO message, final String userSessionId);
     MessageType openVoting(final String gameSessionID, final String userSessionId);

@@ -23,15 +23,17 @@ public class SessionController {
 
     @MessageMapping ("game.newSession")
     @SendToUser ("/queue/reply")
-    public MessageDTO<SessionDTO> createSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
-        SessionDTO result = gameService.createSession(dto, headerAccessor.getSessionId());
-        return MessageDTO.CREATED(result, MessageType.CREATED_SESSION);
+    public MessageDTO<SessionUpdateDTO> createSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = gameService.createSession(dto, headerAccessor.getSessionId());
+        gameController.broadcastVotesInSession(dto.getId());
+        return result;
     }
 
     @MessageMapping ("game.joinSession")
     @SendToUser ("/queue/reply")
-    public MessageDTO<SessionDTO> joinSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
-        MessageType result = gameService.joinSession(dto, headerAccessor.getSessionId());
-        return MessageDTO.<SessionDTO>builder().messageType(result).payload(dto).build();
+    public MessageDTO<SessionUpdateDTO> joinSession(@Payload final SessionDTO dto, SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = gameService.joinSession(dto, headerAccessor.getSessionId());
+        gameController.broadcastVotesInSession(dto.getId());
+        return result;
     }
 }
