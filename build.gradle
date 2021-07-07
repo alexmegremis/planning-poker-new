@@ -23,7 +23,7 @@ ext {
     set('dockerImageTag', "${version}")
 }
 
-jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker:${dockerImageTag}"
+jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker-new:${dockerImageTag}"
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
