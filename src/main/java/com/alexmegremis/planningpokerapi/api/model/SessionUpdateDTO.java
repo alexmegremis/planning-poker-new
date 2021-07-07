@@ -15,12 +15,13 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
     private final Boolean   ownerCanVote;
     private final Boolean   playersVisible;
     private final Boolean   votesVisible;
+    private final Boolean   votesAlwaysVisible;
     private final Boolean   votingOpen;
     private final Long      version;
 
     @Builder
     public SessionUpdateDTO(final String id, final String name, final PlayerDTO owner,
-                            final boolean ownerCanVote, final boolean votingOpen, final boolean playersVisible, final boolean votesVisible,
+                            final boolean ownerCanVote, final boolean votingOpen, final boolean playersVisible, final boolean votesVisible, final boolean votesAlwaysVisible,
                             final long version, final ZonedDateTime created, final ZonedDateTime updated) {
         this.id = id;
         this.name = name;
@@ -29,6 +30,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
         this.votingOpen = votingOpen;
         this.playersVisible = playersVisible;
         this.votesVisible = votesVisible;
+        this.votesAlwaysVisible = votesAlwaysVisible;
         this.version = version;
         this.created = created;
         this.updated = updated;
@@ -42,6 +44,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
                                                   .ownerCanVote(session.getOwnerCanVote())
                                                   .votingOpen(session.getVotingOpen())
                                                   .votesVisible(session.getVotesVisible())
+                                                  .votesAlwaysVisible(session.getVotesAlwaysVisible())
                                                   .playersVisible(session.getPlayersVisible())
                                                   .version(session.getVersion())
                                                   .created(session.getCreated())
@@ -55,7 +58,7 @@ public class SessionUpdateDTO implements UniqueIdentifiable {
         sessionUpdate.votes.clear();
         session.getVotes().entrySet().stream().forEach(e -> {
             String key = session.getPlayersVisible() ? e.getKey().getName() : "##HIDE##";
-            String value = session.getVotingOpen() ? "##HIDE##" : e.getValue();
+            String value = (!session.getVotesVisible()) ? "##HIDE##" : e.getValue();
             sessionUpdate.votes.add(new String[]{key, value});
         });
     }

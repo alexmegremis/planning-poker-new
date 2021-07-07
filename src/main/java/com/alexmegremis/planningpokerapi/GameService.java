@@ -13,8 +13,8 @@ public interface GameService {
     MessageType vote(final VoteDTO message, final String userSessionId);
     MessageDTO<SessionUpdateDTO> getSessionUpdate(final String gameSessionID, final String userSessionId);
     MessageDTO<SessionUpdateDTO> getSessionUpdate(final String gameSessionID);
-    MessageType openVoting(final String gameSessionID, final String userSessionId);
-    MessageType closeVoting(final String gameSessionID, final String userSessionId);
+    MessageDTO<SessionUpdateDTO> openVoting(final String gameSessionID, final String userSessionId);
+    MessageDTO<SessionUpdateDTO> closeVoting(final String gameSessionID, final String userSessionId);
     MessageDTO<SessionUpdateDTO> resetVoting(final String gameSessionID, final String userSessionId);
     MessageDTO<SessionUpdateDTO> showVotes(final String gameSessionID, final String userSessionId);
     MessageDTO<SessionUpdateDTO> hideVotes(final String gameSessionID, final String userSessionId);

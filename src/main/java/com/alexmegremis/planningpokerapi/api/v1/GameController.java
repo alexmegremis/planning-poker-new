@@ -34,6 +34,7 @@ public class GameController {
     public void voteInSession(@Payload final VoteDTO message,
                                              @DestinationVariable final String gameSessionID,
                                              final SimpMessageHeaderAccessor headerAccessor) {
+        this.gameService.vote(message, headerAccessor.getSessionId());
         broadcastVotesInSession(gameSessionID);
     }
 
@@ -79,14 +80,14 @@ public class GameController {
 
     @MessageMapping("game.openVoting.{gameSessionID}")
     public void openVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
-        MessageType result = this.gameService.openVoting(gameSessionID, headerAccessor.getSessionId());
-        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
+        MessageDTO<SessionUpdateDTO> result = this.gameService.openVoting(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
     @MessageMapping("game.closeVoting.{gameSessionID}")
     public void closeVoting(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
-        MessageType result = this.gameService.closeVoting(gameSessionID, headerAccessor.getSessionId());
-        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, MessageDTO.builder().messageType(result).build());
+        MessageDTO<SessionUpdateDTO> result = this.gameService.closeVoting(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
     @MessageMapping("game.showVotes.{gameSessionID}")

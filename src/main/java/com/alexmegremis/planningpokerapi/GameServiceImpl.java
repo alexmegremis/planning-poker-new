@@ -8,14 +8,16 @@ import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static com.alexmegremis.planningpokerapi.GameDataAware.*;
 
 @Slf4j
 @Service
 public class GameServiceImpl implements GameService, GameDataAware {
+
+    public static final String FLAG_VOTING_OPEN = "votingOpen";
+    public static final String FLAG_VOTES_VISIBLE = "votesVisible";
+    public static final String FLAG_PLAYERS_VISIBLE = "playersVisible";
 
     private MessageType validateBasicVoteActivity(Optional<PlayerDTO> playerSearch, Optional<SessionDTO> sessionSearch) {
         MessageType result = null;
@@ -58,6 +60,9 @@ public class GameServiceImpl implements GameService, GameDataAware {
 
         if (result == null) {
             session.getVotes().put(player, message.getVote());
+            if(!session.getVotesAlwaysVisible()) {
+                session.setVotesVisible(false);
+            }
             session.updated();
             result = MessageType.VOTE_ACK;
             log.info(">>> Player {} voted {} for session {}", player, message.getVote(), session);
@@ -66,8 +71,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
         return result;
     }
 
-    @SneakyThrows
-    private <T> MessageDTO<SessionUpdateDTO> doVoteManagementFlag(final String gameSessionID, final String userSessionId, final String flagName, final Class<T> type, final T flagValue) {
+    private <T> MessageDTO<SessionUpdateDTO> setManagementFlag(final String gameSessionID, final String userSessionId, final String flagName, final Class<T> flagType, final T flagValue) {
 
         Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
         Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
@@ -76,9 +80,10 @@ public class GameServiceImpl implements GameService, GameDataAware {
         SessionUpdateDTO update = null;
         if(messageType == null) {
             SessionDTO session = sessionSearch.get();
-            final Method method = Arrays.stream(session.getClass().getDeclaredMethods()).filter(m -> m.getName().equalsIgnoreCase(("set" + flagName)) && m.getParameterTypes()[0] == type).findFirst().get();
-//            final Method method = session.getClass().getMethod("get" + flagName, type);
-            method.invoke(session, flagValue);
+            doSetManagementFlag(session, flagName, flagType, flagValue);
+            if(flagName.equals(FLAG_VOTING_OPEN) && flagType == Boolean.class && (Boolean) flagValue && !session.getVotesAlwaysVisible()) {
+                doSetManagementFlag(session, FLAG_VOTES_VISIBLE, Boolean.class, false);
+            }
             messageType = MessageType.VOTE_UPDATE;
             update = SessionUpdateDTO.create(sessionSearch.get());
         }
@@ -87,34 +92,21 @@ public class GameServiceImpl implements GameService, GameDataAware {
         return result;
     }
 
-    @Override
-    public MessageType openVoting(final String gameSessionID, final String userSessionId) {
-
-        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
-        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
-
-        MessageType result  = validateVoteManagementActivity(playerSearch, sessionSearch);
-
-        if(result == null) {
-            sessionSearch.get().setVotingOpen(true);
-            result = MessageType.VOTE_OPEN;
-        }
-        return result;
+    @SneakyThrows
+    private <T> void doSetManagementFlag(final SessionDTO session, final String flagName, final Class<T> type, final T flagValue) {
+        final Method method = Arrays.stream(session.getClass().getDeclaredMethods()).filter(m -> m.getName().equalsIgnoreCase(("set" + flagName)) && m.getParameterTypes()[0] == type).findFirst().get();
+        method.invoke(session, flagValue);
+        log.info(">>> Setting flag {} to {} for session {} ({})", flagName, flagValue, session.getName(), session.getId());
     }
 
     @Override
-    public MessageType closeVoting(final String gameSessionID, final String userSessionId) {
+    public MessageDTO<SessionUpdateDTO> openVoting(final String gameSessionID, final String userSessionId) {
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_VOTING_OPEN, Boolean.class, true);
+    }
 
-        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
-        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
-
-        MessageType result  = validateVoteManagementActivity(playerSearch, sessionSearch);
-
-        if(result == null) {
-            sessionSearch.get().setVotingOpen(false);
-            result = MessageType.VOTE_CLOSE;
-        }
-        return result;
+    @Override
+    public MessageDTO<SessionUpdateDTO> closeVoting(final String gameSessionID, final String userSessionId) {
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_VOTING_OPEN, Boolean.class, false);
     }
 
     @Override
@@ -124,22 +116,22 @@ public class GameServiceImpl implements GameService, GameDataAware {
 
     @Override
     public MessageDTO<SessionUpdateDTO> showVotes(final String gameSessionID, final String userSessionId) {
-        return doVoteManagementFlag(gameSessionID, userSessionId, "votesVisible", Boolean.class, true);
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_VOTES_VISIBLE, Boolean.class, true);
     }
 
     @Override
     public MessageDTO<SessionUpdateDTO> hideVotes(final String gameSessionID, final String userSessionId) {
-        return doVoteManagementFlag(gameSessionID, userSessionId, "votesVisible", Boolean.class, false);
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_VOTES_VISIBLE, Boolean.class, false);
     }
 
     @Override
     public MessageDTO<SessionUpdateDTO> showPlayers(final String gameSessionID, final String userSessionId) {
-        return doVoteManagementFlag(gameSessionID, userSessionId, "playersVisible", Boolean.class, true);
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_PLAYERS_VISIBLE, Boolean.class, true);
     }
 
     @Override
     public MessageDTO<SessionUpdateDTO> hidePlayers(final String gameSessionID, final String userSessionId) {
-        return doVoteManagementFlag(gameSessionID, userSessionId, "playersVisible", Boolean.class, false);
+        return setManagementFlag(gameSessionID, userSessionId, FLAG_PLAYERS_VISIBLE, Boolean.class, false);
     }
 
     @Override
