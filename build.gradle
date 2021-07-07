@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '2.5.1'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'com.google.cloud.tools.jib' version '3.1.1'
     id 'java'
 }
 
@@ -18,17 +19,16 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    set('dockerImageTag', "${version}")
+}
+
+jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker:${dockerImageTag}"
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    
-//    implementation 'org.webjars:webjars-locator-core'
-//    implementation 'org.webjars:sockjs-client:1.1.2'
-//    implementation 'org.webjars:stomp-websocket:2.3.4'
-//    implementation 'org.webjars:bootstrap:3.3.7'
-//    implementation 'org.webjars:jquery:3.1.1-1'
     implementation 'com.google.code.gson:gson:2.8.7'
-
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
