@@ -2,7 +2,6 @@ package com.alexmegremis.planningpokerapi.api.v1;
 
 import com.alexmegremis.planningpokerapi.GameService;
 import com.alexmegremis.planningpokerapi.api.model.*;
-import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -11,14 +10,9 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
 
-import java.security.Principal;
-import java.util.Map;
-
 @Controller
 @Slf4j
 public class GameController {
-
-    private Gson gson = new Gson();
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -100,12 +94,6 @@ public class GameController {
     public void hideVotes(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
         MessageDTO<SessionUpdateDTO> result = this.gameService.hideVotes(gameSessionID, headerAccessor.getSessionId());
         this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
-    }
-
-    @MessageMapping ("/message")
-    @SendToUser ("/queue/reply")
-    public String processMessageFromClient(@Payload String message, Principal principal) throws Exception {
-        return gson.fromJson(message, Map.class).get("name").toString();
     }
 
     @MessageExceptionHandler
