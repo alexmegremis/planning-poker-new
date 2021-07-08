@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.*;
 
 @Profile("devlocal")
 @Configuration
-@EnableWebMvc
+//@EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
 
     @Override

@@ -28,7 +28,6 @@ jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker-new:${dockerImag
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    implementation 'com.google.code.gson:gson:2.8.7'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
