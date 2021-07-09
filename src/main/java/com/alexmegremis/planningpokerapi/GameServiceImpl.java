@@ -185,10 +185,28 @@ public class GameServiceImpl implements GameService, GameDataAware {
     public PlayerDTO createPlayer(final PlayerDTO message, final String userSessionId) {
         message.setId(getUniqueId(PLAYERS));
         message.setSessionID(userSessionId);
+        message.setToken(Base64.getEncoder().withoutPadding().encodeToString(userSessionId.getBytes()));
         PLAYERS.add(message);
 
         log.info(">>> created player via WS: {}", message);
         return message;
+    }
+
+    @Override
+    public MessageDTO<PlayerDTO> reconnectPlayer(final PlayerDTO message, final String userSessionId) {
+        Optional<PlayerDTO> existingPlayer = PLAYERS.stream().filter(p -> p.getId().equals(message.getId()) && p.getToken().equals(message.getToken())).findFirst();
+        MessageDTO<PlayerDTO> result = null;
+        if(existingPlayer.isPresent()) {
+            PlayerDTO player = existingPlayer.get();
+            String oldUserSessionID = player.getSessionID();
+            player.setSessionID(userSessionId);
+            result = MessageDTO.<PlayerDTO>builder().messageType(MessageType.FOUND_PLAYER).payload(player).build();
+            log.info(">>> Reconnected Player {} ({}), old session {}, new session {}",
+                     player.getName(), player.getId(), oldUserSessionID, player.getSessionID());
+        } else {
+            result = MessageDTO.<PlayerDTO>builder().messageType(MessageType.FAIL_RECONNECT_PLAYER_NOT_FOUND).build();
+        }
+        return result;
     }
 
     @Override

@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '2.5.1'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'com.google.cloud.tools.jib' version '3.1.1'
     id 'java'
 }
 
@@ -17,6 +18,12 @@ configurations {
 repositories {
     mavenCentral()
 }
+
+ext {
+    set('dockerImageTag', "${version}")
+}
+
+jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker-new:${dockerImageTag}"
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'

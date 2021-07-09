@@ -30,4 +30,8 @@ public class PlayerDTO implements UniqueIdentifiable {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     private       String sessionID;
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private       String token;
 }
