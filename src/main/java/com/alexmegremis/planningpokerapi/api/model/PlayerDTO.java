@@ -1,6 +1,7 @@
 package com.alexmegremis.planningpokerapi.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.util.Calendar;
@@ -30,4 +31,8 @@ public class PlayerDTO implements UniqueIdentifiable {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     private       String sessionID;
+    @JsonProperty (access = JsonProperty.Access.WRITE_ONLY)
+    @EqualsAndHashCode.Exclude
+//    @ToString.Exclude
+    private       String token;
 }

@@ -20,7 +20,17 @@ public class PlayerController {
     @MessageMapping ("game.newPlayer")
     @SendToUser ("/queue/reply")
     public MessageDTO<PlayerDTO> createPlayer(@Payload final PlayerDTO dto, SimpMessageHeaderAccessor headerAccessor) {
-        PlayerDTO result = gameService.createPlayer(dto, headerAccessor.getSessionId());
-        return MessageDTO.CREATED(result, MessageType.CREATED_PLAYER);
+        PlayerDTO player = gameService.createPlayer(dto, headerAccessor.getSessionId());
+        MessageDTO<PlayerDTO> result = MessageDTO.CREATED(player, MessageType.CREATED_PLAYER);
+        result.setMessage(player.getToken());
+        return result;
+    }
+
+    @MessageMapping ("game.reconnectPlayer")
+    @SendToUser ("/queue/reply")
+    public MessageDTO<PlayerDTO> reconnectPlayer(@Payload final PlayerDTO dto, SimpMessageHeaderAccessor headerAccessor) {
+        log.debug(">>> Received reconnectPlayer call with {} and {}", dto, headerAccessor.getSessionId());
+        MessageDTO<PlayerDTO> result = gameService.reconnectPlayer(dto, headerAccessor.getSessionId());
+        return result;
     }
 }
