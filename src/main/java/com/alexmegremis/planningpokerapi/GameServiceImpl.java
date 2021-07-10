@@ -194,18 +194,30 @@ public class GameServiceImpl implements GameService, GameDataAware {
 
     @Override
     public MessageDTO<PlayerDTO> reconnectPlayer(final PlayerDTO message, final String userSessionId) {
+
+//        log.debug(">>> RECONNECTPLAYER RUNS");
+//        log.debug(">>> message: {}", message);
+//        log.debug(">>> userSessionId: {}", userSessionId);
+//        log.debug(">>> EXISTING PLAYERS");
+//        PLAYERS.stream().forEach(p -> log.debug(">>> PlayerDTO {}", p));
+//        log.debug(">>> EXISTING PLAYERS MATCH TEST");
+//        PLAYERS.stream().forEach(p -> log.debug(">>> PlayerDTO {} : {} : {}", p, p.getId().equals(message.getId()), p.getToken().equals(message.getToken())));
         Optional<PlayerDTO> existingPlayer = PLAYERS.stream().filter(p -> p.getId().equals(message.getId()) && p.getToken().equals(message.getToken())).findFirst();
         MessageDTO<PlayerDTO> result = null;
         if(existingPlayer.isPresent()) {
             PlayerDTO player = existingPlayer.get();
+//            log.debug(">>> Found match : {}", player);
             String oldUserSessionID = player.getSessionID();
             player.setSessionID(userSessionId);
             result = MessageDTO.<PlayerDTO>builder().messageType(MessageType.FOUND_PLAYER).payload(player).build();
-            log.info(">>> Reconnected Player {} ({}), old session {}, new session {}",
-                     player.getName(), player.getId(), oldUserSessionID, player.getSessionID());
+//            log.debug(">>> Reconnected Player {} ({}), old session {}, new session {}",
+//                     player.getName(), player.getId(), oldUserSessionID, player.getSessionID());
         } else {
+//            log.debug(">>> Did not find match");
             result = MessageDTO.<PlayerDTO>builder().messageType(MessageType.FAIL_RECONNECT_PLAYER_NOT_FOUND).build();
         }
+
+//        log.debug(">>> returning {}", result);
         return result;
     }
 
