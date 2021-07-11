@@ -40,7 +40,7 @@ public class GameServiceImpl implements GameService, GameDataAware {
     }
 
     @Override
-    public MessageType vote(final VoteDTO message, final String userSessionId) {
+    public MessageDTO<String> vote(final VoteDTO message, final String userSessionId) {
 
         Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
         Optional<SessionDTO> sessionSearch = findSession(message.getSession().getId());
@@ -48,25 +48,27 @@ public class GameServiceImpl implements GameService, GameDataAware {
         PlayerDTO   player  = null;
         SessionDTO  session = null;
 
-        MessageType result  = validateBasicVoteActivity(playerSearch, sessionSearch);
+        MessageType messageType  = validateBasicVoteActivity(playerSearch, sessionSearch);
 
-        if(result == null) {
+        if(messageType == null) {
             player = playerSearch.get();
             session = sessionSearch.get();
             if (! session.getPlayers().contains(player)) {
-                result = MessageType.FAIL_VOTE_PLAYER_NOT_IN_SESSION;
+                messageType = MessageType.FAIL_VOTE_PLAYER_NOT_IN_SESSION;
             }
         }
 
-        if (result == null) {
+        if (messageType == null) {
             session.getVotes().put(player, message.getVote());
             if(!session.getVotesAlwaysVisible()) {
                 session.setVotesVisible(false);
             }
             session.updated();
-            result = MessageType.VOTE_ACK;
+            messageType = MessageType.VOTE_ACK;
             log.info(">>> Player {} voted {} for session {}", player, message.getVote(), session);
         }
+
+        MessageDTO<String> result = MessageDTO.<String>builder().messageType(messageType).payload(message.getVote()).build();
 
         return result;
     }
@@ -110,8 +112,21 @@ public class GameServiceImpl implements GameService, GameDataAware {
     }
 
     @Override
-    public MessageDTO<SessionUpdateDTO> resetVoting(final String gameSessionID, final String userSessionId) {
-        return null;
+    public MessageDTO<SessionUpdateDTO> resetVotes(final String gameSessionID, final String userSessionId) {
+        Optional<PlayerDTO>  playerSearch  = findPlayer(userSessionId);
+        Optional<SessionDTO> sessionSearch = findSession(gameSessionID);
+
+        MessageType messageType  = validateVoteManagementActivity(playerSearch, sessionSearch);
+        SessionUpdateDTO update = null;
+        if(messageType == null) {
+            SessionDTO session = sessionSearch.get();
+            session.getVotes().keySet().forEach(k -> session.getVotes().put(k, ""));;
+            messageType = MessageType.VOTE_UPDATE;
+            update = SessionUpdateDTO.create(session);
+        }
+
+        final MessageDTO<SessionUpdateDTO> result = MessageDTO.<SessionUpdateDTO>builder().messageType(messageType).payload(update).build();
+        return result;
     }
 
     @Override

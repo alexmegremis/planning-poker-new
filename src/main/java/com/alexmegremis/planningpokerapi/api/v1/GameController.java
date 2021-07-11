@@ -25,11 +25,13 @@ public class GameController {
 
     // This is likely unnecessary
     @MessageMapping("game.vote.{gameSessionID}")
-    public void voteInSession(@Payload final VoteDTO message,
+    @SendToUser ("/queue/reply")
+    public MessageDTO<String> voteInSession(@Payload final VoteDTO message,
                                              @DestinationVariable final String gameSessionID,
                                              final SimpMessageHeaderAccessor headerAccessor) {
-        this.gameService.vote(message, headerAccessor.getSessionId());
+        MessageDTO<String> result = this.gameService.vote(message, headerAccessor.getSessionId());
         broadcastVotesInSession(gameSessionID);
+        return result;
     }
 
     @MessageMapping("game.{gameSessionID}")
@@ -44,26 +46,6 @@ public class GameController {
     public void handleSubscribeEvent(@DestinationVariable final String gameSessionID) {
         log.info(">>> Handling subscribe to {}", gameSessionID);
         broadcastVotesInSession(gameSessionID);
-    }
-
-    @SubscribeMapping("/game/foobartest")
-    public void handleTestSubscribeEvent() {
-        log.info(">>> Handling GAME/FOOBARTEST subscribe");
-    }
-
-    @SubscribeMapping("/app/game/foobartest")
-    public void handleTestSubscribeEvent02() {
-        log.info(">>> Handling APP/GAME/FOOBARTEST subscribe");
-    }
-
-    @SubscribeMapping("/foobartest")
-    public void handleTestSubscribeEvent04() {
-        log.info(">>> Handling /FOOBARTEST subscribe");
-    }
-
-    @SubscribeMapping("public")
-    public void handleGreetingsPublicSubscribeEvent() {
-        log.info(">>> Handling Public subscribe");
     }
 
     public void broadcastVotesInSession(final String gameSessionID) {
@@ -93,6 +75,24 @@ public class GameController {
     @MessageMapping("game.hideVotes.{gameSessionID}")
     public void hideVotes(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
         MessageDTO<SessionUpdateDTO> result = this.gameService.hideVotes(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
+    }
+
+    @MessageMapping("game.showPlayers.{gameSessionID}")
+    public void showPlayers(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.showPlayers(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
+    }
+
+    @MessageMapping("game.hidePlayers.{gameSessionID}")
+    public void hidePlayers(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.hidePlayers(gameSessionID, headerAccessor.getSessionId());
+        this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
+    }
+
+    @MessageMapping("game.resetVotes.{gameSessionID}")
+    public void resetVotes(@DestinationVariable final String gameSessionID, final SimpMessageHeaderAccessor headerAccessor) {
+        MessageDTO<SessionUpdateDTO> result = this.gameService.resetVotes(gameSessionID, headerAccessor.getSessionId());
         this.messagingTemplate.convertAndSend("/topic/game/" + gameSessionID, result);
     }
 
