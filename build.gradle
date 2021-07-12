@@ -1,8 +1,9 @@
 plugins {
-    id 'org.springframework.boot' version '2.5.1'
+    id 'org.springframework.boot' version '2.4.8'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'com.google.cloud.tools.jib' version '3.1.1'
     id 'java'
+    id 'com.google.cloud.tools.appengine' version '2.4.1'
 }
 
 group = 'com.alexmegremis'
@@ -21,6 +22,13 @@ repositories {
 
 ext {
     set('dockerImageTag', "${version}")
+}
+
+appengine {
+    deploy {
+        version = "0-0-2"
+        projectId = "GCLOUD_CONFIG"
+    }
 }
 
 jib.to.image = "dreg.aamegremis.com/alexmegremis/planning-poker-new:${dockerImageTag}"
